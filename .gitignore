@@ -1,0 +1,33 @@
+# R-related files
+.Rhistory
+.RData
+.Rproj.user/
+
+# RStudio-specific files
+.Rproj.user/
+
+# renv files
+renv/
+renv.lock
+
+# MacOS
+.DS_Store
+
+# Windows
+Thumbs.db
+
+# Logs and temp files
+*.log
+*.Rhistory
+*.RData
+
+# package data
+*.tgz
+*.tar.gz
+
+# Other generated files
+*.Rproj.user/
+.Rapp.history
+
+# data folder
+data
