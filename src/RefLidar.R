@@ -114,7 +114,7 @@ RefLidar <- function(lidar.dir) {
 
   # Format output based on raster type
   if (raster_type == "AGB") {
-    pts <- pts[, c("PLOT_ID", "POINT_X", "POINT_Y", "AGB", "AVG_YEAR")]
+    pts <- pts[, c("PLOT_ID", "POINT_X", "POINT_Y", "AGB", "AVG_YEAR", "SIZE_HA")]
   } else if (raster_type == "CV") {
     pts <- pts[, c("PLOT_ID", "POINT_X", "POINT_Y", "CV", "AVG_YEAR")]
   } else if (raster_type == "SD") {

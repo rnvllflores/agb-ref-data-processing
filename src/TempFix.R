@@ -34,83 +34,88 @@
 #' head(resultApply)
 #' resultVar <- TempVar(sample_plots, 2004)
 #' head(resultVar)
+
+# Load the 'config.RData' file from the 'src/config' directory
+load(here("src", "config", "directoryConfig.RData"))
+dataDir <- config$dataDir
+
 TempApply <- function(plt, map_year, gez = "all") {
-
-  plt <- check_and_convert_plt(plt, ez=TRUE)
-
+  
+  # plt <- check_and_convert_plt(plt, ez=TRUE)
+  
   # Read growth rate data and enforce data structure:
-  gr <- read.csv(system.file(file.path("data", "GR_Uniques.csv"), package = "Plot2Map"))
+  gr <- read.csv(file.path(dataDir, "GR_Uniques.csv"))
   gr$GEZ <- as.character(gr$GEZ)
   gr$ZONE <- as.character(gr$ZONE)
   gr$FAO.ecozone <- as.character(gr$FAO.ecozone)
-
+  
   plt$AVG_YEAR <- as.numeric(plt$AVG_YEAR)
-
+  
   # Check that there is GR data for the 'GEZ', 'ZONE', 'FAO.ecozone' combinations in plt:
   if (gez == "all") {
     # Perform a left join to check for missing combinations
     unmatched <- dplyr::anti_join(plt, gr, by = c("GEZ", "ZONE", "FAO.ecozone"))
-
+    
     if (nrow(unmatched) > 0) {
       stop("The function misses Growth Rate data for the following GEZ, ZONE, and FAO.ecozone combinations (try to remove the indicated combination(s) from the input plt object or don't use the gez = \"all\" option):\n",
            paste0(unique(unmatched$GEZ), ", ", unique(unmatched$ZONE), ", ", unique(unmatched$FAO.ecozone), collapse = "\n"))
     }
   }
-
+  
   # Filter eco-region first
   if (gez %in% unique(plt$GEZ) | gez == "all") {
-
+    
     if (gez == "all") {
       plt0 <- plt
     } else {
       plt0 <- dplyr::filter(plt, GEZ == gez)
     }
-
+    
     # String check
     plt0$ZONE <- ifelse(plt0$ZONE == 'Northern America', 'N.America', plt0$ZONE)
     plt0$ZONE <- ifelse(plt0$ZONE == 'Southern America', 'S.America', plt0$ZONE)
     plt0$ZONE <- ifelse(plt0$ZONE == 'Central America', 'C.America', plt0$ZONE)
-
+    
     # Join growth rate table using 3 variables to assure uniqueness
     plt.old <- dplyr::left_join(plt0, gr, by = c('GEZ', 'ZONE', 'FAO.ecozone'))
-
+    
     # Filter above and below map year (i.e. 2010 for GlobBiomass), keep no changes to map year
     below <- subset(plt.old, AVG_YEAR < map_year) #non-NAs
     above <- subset(plt.old, AVG_YEAR > map_year) #non-NAs
     static <- subset(plt.old, is.na(AVG_YEAR) | AVG_YEAR == map_year) #NAs AVG_YEAR OR 2010 subsets
-
+    
     # Apply growth rates (GR1 = primary, GR2 = old secondary, GR3 = young secondary)
     below$AGB_ORIG <- below$AGB_T_HA
     above$AGB_ORIG <- above$AGB_T_HA
     below$AGB_T_HA <- below$AGB_T_HA + (ifelse(below$AGB_T_HA < 100, below$GR3, below$GR2) * (map_year - below$AVG_YEAR))
     above$AGB_T_HA <- above$AGB_T_HA - (ifelse(above$AGB_T_HA < 100, above$GR3, above$GR2) * (above$AVG_YEAR - map_year))
-
+    
     below$AGB_T_HA <- ifelse(below$AGB_T_HA > 152,
                              below$AGB_ORIG + (below$GR1 * (map_year - below$AVG_YEAR)), below$AGB_T_HA)
-
+    
     above$AGB_T_HA <- ifelse(above$AGB_T_HA > 152,
                              above$AGB_ORIG - (above$GR1 * (above$AVG_YEAR - map_year)), above$AGB_T_HA) #retain if not in primary/GR3 class
-
+    
     above$AGB_T_HA <- ifelse(above$AGB_T_HA < 0,
                              above$AGB_ORIG, above$AGB_T_HA) #retain original if it gets negative
-
+    
     # Combine all: static and recomputed
     static$AGB_ORIG <- static$AGB_T_HA
-
+    
     plt.new <- dplyr::bind_rows(below, above, static)
     plt.new$AGB_T_HA_ORIG <- plt.new$AGB_ORIG
-
+    
     # Checker of rows
     if (sum(nrow(plt.old)) == sum(nrow(plt.new))) {
       message('Growth rates applied correspondingly per eco-region.')
     } else {
       stop('Something is wrong, nr of dataframe rows different before/after applying growth rates.')
     }
-
+    
     #remove last joined growth rates columns for further row binding
     remove <- c('GR1', 'GR2', 'GR3', 'AGB_ORIG')
     plt.new <- plt.new[, !(names(plt.new) %in% remove)]
-
+    
     plt.new$AGB_T_HA <- ifelse(is.na(plt.new$AGB_T_HA), plt$AGB_T_HA, plt.new$AGB_T_HA)
     return(plt.new)
   } #this part doesn't give NAs already
@@ -140,74 +145,75 @@ TempApply <- function(plt, map_year, gez = "all") {
 #' resultVar <- TempVar(sample_plots, 2004)
 #' head(resultVar)
 TempVar <- function(plt, map_year, gez = "all") {
-
-  plt <- check_and_convert_plt(plt, ez=TRUE)
-
+  
+  # plt <- check_and_convert_plt(plt, ez=TRUE)
+  
   # Read growth rate data and enforce data structure:
-  gr <- read.csv(system.file(file.path("data", "GR_SD.csv"), package = "Plot2Map"))
+  dataDir <- config$dataDir
+  gr <- read.csv(file.path(dataDir, "GR_SD.csv"))
   gr$GEZ <- as.character(gr$GEZ)
   gr$ZONE <- as.character(gr$ZONE)
   gr$FAO.ecozone <- as.character(gr$FAO.ecozone)
-
+  
   plt$AVG_YEAR <- as.numeric(plt$AVG_YEAR)
-
+  
   # Check that there is GR data for the 'GEZ', 'ZONE', 'FAO.ecozone' combinations in plt:
   if (gez == "all") {
     # Perform a left join to check for missing combinations
     unmatched <- dplyr::anti_join(plt, gr, by = c("GEZ", "ZONE", "FAO.ecozone"))
-
+    
     if (nrow(unmatched) > 0) {
       stop("The function misses Growth Rate data for the following GEZ, ZONE, and FAO.ecozone combinations (try to remove the indicated combination(s) from the input plt object or don't use the gez = \"all\" option):\n",
            paste0(unique(unmatched$GEZ), ", ", unique(unmatched$ZONE), ", ", unique(unmatched$FAO.ecozone), collapse = "\n"))
     }
   }
-
+  
   # Filter eco-region first
   if (gez %in% unique(plt$GEZ) | gez == "all") {
-
+    
     if (gez == "all") {
       plt0 <- plt
     } else {
       plt0 <- dplyr::filter(plt, GEZ == gez)
     }
-
+    
     plt0$ZONE <- ifelse(plt0$ZONE == 'Northern America', 'N.America', plt0$ZONE)
     plt0$ZONE <- ifelse(plt0$ZONE == 'Southern America', 'S.America', plt0$ZONE)
     plt0$ZONE <- ifelse(plt0$ZONE == 'Central America', 'C.America', plt0$ZONE)
-
+    
     # Join growth rate table using 3 variables to assure uniqueness
     plt.old <- dplyr::left_join(plt0, gr, by = c('GEZ', 'ZONE', 'FAO.ecozone'))
-
+    
     # Filter above and below map year (i.e. 2010 for GlobBiomass), keep no changes to map year
     below <- subset(plt.old, AVG_YEAR < map_year) #non-NAs
     above <- subset(plt.old, AVG_YEAR > map_year) #non-NAs
     static <- subset(plt.old, is.na(AVG_YEAR) | AVG_YEAR == map_year) #NAs AVG_YEAR OR 2010 subsets
-
+    
     # Apply growth rates (SD1 = primary, SD2 = old secondary, SD3 = young secondary)
     below$AGB_T_HA_ORIG <- below$AGB_T_HA
     above$AGB_T_HA_ORIG <- above$AGB_T_HA
     below$AGB_T_HA <- below$AGB_T_HA_ORIG + (ifelse(below$AGB_T_HA_ORIG < 100, below$SD3, below$SD2) * (map_year - below$AVG_YEAR))
     above$AGB_T_HA <- above$AGB_T_HA_ORIG - (ifelse(above$AGB_T_HA_ORIG < 100, above$SD3, above$SD2) * (above$AVG_YEAR -  map_year))
-
+    
     below$AGB_T_HA <- ifelse(below$AGB_T_HA > 152,
                              below$AGB_T_HA_ORIG + (below$SD1 * (map_year - below$AVG_YEAR)), below$AGB_T_HA)
-
+    
     above$AGB_T_HA <- ifelse(above$AGB_T_HA > 152,
                              above$AGB_T_HA_ORIG - (above$SD1 * (above$AVG_YEAR - map_year)), above$AGB_T_HA) #retain if not in primary/SD3 class
-
+    
     above$AGB_T_HA <- ifelse(above$AGB_T_HA < 0,
                              above$AGB_T_HA_ORIG, above$AGB_T_HA) #retain original if it gets negative
-
+    
     #combine all: static and recomputed
     plt.new <- dplyr::bind_rows(below, above, static)
-
+    
     # Checker of rows
     if (sum(nrow(plt.old)) == sum(nrow(plt.new))) {
       message('Growth rates applied correspondingly per eco-region.')
     } else {
       stop('Something is wrong, nr of dataframe rows different before/after applying growth rates.')
     }
-
+    
     # Retain last joined growth rates columns for further row binding
     plt.new$sdGrowth <- abs(plt.new$AGB_T_HA - plt.new$AGB_T_HA_ORIG)
     retain <- c(names(plt0), 'sdGrowth')
@@ -448,5 +454,4 @@ TempVar <- function(plt, map_year, gez = "all") {
 #   expect_equal(sort(resultApply$AGB_T_HA_ORIG), sort(resultVar$AGB_T_HA))
 #
 # })
-
 

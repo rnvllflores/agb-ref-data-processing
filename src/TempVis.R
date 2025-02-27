@@ -32,12 +32,12 @@
 #' head(sample_plots)
 #' HistoTemp(sample_plots, 2004)
 HistoTemp <- function(df, year, outDir = "results") {
-
-    # Create output directory if it doesn't exist
+  
+  # Create output directory if it doesn't exist
   if (!dir.exists(outDir)) {
     dir.create(outDir, recursive = TRUE)
   }
-
+  
   if ("plotAGB_10" %in% colnames(df)) {
     df$AGB_T_HA <- df$plotAGB_10
     df$AGB_T_HA_ORIG <- df$orgPlotAGB
@@ -47,13 +47,13 @@ HistoTemp <- function(df, year, outDir = "results") {
     df$AGB_T_HA_ORIG <- df$AGB_T_HA_ORIG
     main <- 'Before and after temporal adjustment'
   }
-
+  
   df <- df[(df$AGB_T_HA < 600 & df$AGB_T_HA_ORIG < 600 & df$AGB_T_HA > 0), ]  #select 600 and below, disregard negative for now
-
+  
   # create a bar graph with fixed agb bins
   h1 <- hist(df$AGB_T_HA_ORIG, plot = FALSE, breaks = 25)
   h2 <- hist(df$AGB_T_HA, plot = FALSE, breaks = 25)
-
+  
   png(filename = file.path(outDir, paste0('histogram_tempfixed_', year, '.png')),
       width = 800, height = 600)
   y.ax <- nrow(df) / 2
@@ -67,7 +67,7 @@ HistoTemp <- function(df, year, outDir = "results") {
          col = c(rgb(0, 0, 1, 1/4), rgb(1, 0, 0, 1/4), rgb(0.5, 0, 0.5, 1/4)),
          lwd = 10, cex = 2, bty = 'n')
   dev.off()
-
+  
   invisible(NULL)
 }
 
@@ -96,12 +96,12 @@ HistoTemp <- function(df, year, outDir = "results") {
 #' head(sample_plots)
 #' HistoShift(sample_plots, 2004)
 HistoShift <- function(df, year, outDir = "results") {
-
+  
   # Create output directory if it doesn't exist
   if (!dir.exists(outDir)) {
     dir.create(outDir, recursive = TRUE)
   }
-
+  
   if ("plotAGB_10" %in% colnames(df)) {
     df$AGB_T_HA <- df$plotAGB_10
     df$AGB_T_HA_ORIG <- df$orgPlotAGB
@@ -109,22 +109,22 @@ HistoShift <- function(df, year, outDir = "results") {
     df$AGB_T_HA <- df$AGB_T_HA
     df$AGB_T_HA_ORIG <- df$AGB_T_HA_ORIG
   }
-
+  
   #calculate change in bins
   df$AGB_T_HA_ORIG <- ifelse(df$AGB_T_HA_ORIG == 0, df$AGB_T_HA_ORIG + 0.0001, df$AGB_T_HA_ORIG)
   df$AGB_T_HA <- ifelse(df$AGB_T_HA == 0, df$AGB_T_HA + 0.0001, df$AGB_T_HA)
-
+  
   bins <- c(0:9 * 20, 2:5 * 100, Inf)
   old1 <- transform(df, group = cut(AGB_T_HA_ORIG, breaks = bins))
   new1 <- transform(df, group = cut(AGB_T_HA, breaks = bins))
-
+  
   old2 <- dplyr::group_by(old1, group) %>% dplyr::tally()
   new2 <- dplyr::group_by(new1, group) %>% dplyr::tally()
-
+  
   #calculate change in AGB
   old3 <- aggregate(old1["AGB_T_HA_ORIG"], by = old1["group"], mean)
   new3 <- aggregate(new1["AGB_T_HA"], by = new1["group"], mean)
-
+  
   if (nrow(old2) != nrow(new2)) {
     fj1 <- dplyr::full_join(old2, new2, by = 'group')
     fj2 <- dplyr::full_join(old3, new3, by = 'group')
@@ -134,10 +134,10 @@ HistoShift <- function(df, year, outDir = "results") {
     outs <- do.call(cbind, list(old2, new2, old3, new3))
     outs <- outs[, c(1, 2, 4, 6, 8)]
   }
-
+  
   names(outs) <- c('agb_Mgha_bins', 'n_pre', 'n_post', 'agb_Mgha_pre', 'agb_Mgha_post')
   write.csv(outs, file.path(outDir, paste0('TF_pre_post_change_', year, '.csv')), row.names = FALSE)
-
+  
   outs
 }
 
@@ -315,4 +315,3 @@ HistoShift <- function(df, year, outDir = "results") {
 #   # Check if output file is created
 #   expect_true(file.exists(file.path(outDir, "TF_pre_post_change_2020.csv")))
 # })
-

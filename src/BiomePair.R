@@ -26,15 +26,19 @@
 #'}
 #'
 BiomePair <- function(plt) {
+  
+  # Load the 'config.RData' file from the 'src/config' directory
+  load(here("src", "config", "directoryConfig.RData"))
+  dataDir <- config$dataDir
 
-  plt <- check_and_convert_plt(plt)
+  # plt <- check_and_convert_plt(plt)
 
   # Convert input to terra vector
   plots0 <- terra::vect(plt, geom = c("POINT_X", "POINT_Y"))
 
   # Load pre-processed shapefiles
-  li <- terra::vect(system.file(file.path("data", "eco_zone.shp"), package="Plot2Map"))
-  re <- terra::vect(system.file(file.path("data", "world_region.shp"), package="Plot2Map"))
+  li <- terra::vect(file.path(dataDir, "eco_zone.shp"))
+  re <- terra::vect(file.path(dataDir, "world_region.shp"))
 
   # Prepare points for intersection
   p <- plots0
