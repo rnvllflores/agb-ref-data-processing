@@ -65,14 +65,16 @@ if (file.exists(checkpoint_path)) {
 }
 
 ## ------------------ Measurement error (ONLY for plot data cases #1-3) --------------------------
-# 
-# ## Using a pre-trained RF model for plot-level data 
-# load(file.path(dataDir, "rf1.RData")) #pre-trained RF model from 10000+ plots across biomes 
-# plotsPred <- plots2[,c('AGB','SIZE_HA', 'GEZ')]
-# names(plotsPred) <- c('agb', 'size', 'gez')
-# plotsPred$size <- as.numeric(plotsPred$size) * 10000 #convert size to m2
-# plotsPred$gez = factor(plotsPred$gez,levels = c("Boreal","Subtropical","Temperate","Tropical"))
-# plots2$sdTree <- predict(rf1, plotsPred)[[1]]
+
+
+## Using a pre-trained RF model for plot-level data 
+load(file.path(dataDir, "rf1.RData")) #pre-trained RF model from 10000+ plots across biomes 
+plotsPred <- plots2[,c('AGB','SIZE_HA', 'GEZ')]
+names(plotsPred) <- c('agb', 'size', 'gez')
+plotsPred$size <- as.numeric(plotsPred$size) * 10000 #convert size to m2
+plotsPred$gez = factor(plotsPred$gez,levels = c("Boreal","Subtropical","Temperate","Tropical"))
+plots2$sdTree <- predict(rf1, plotsPred)[[1]]
+
 
 
 ## ------------------ Temporal adjustment ------------------------------------------------------
@@ -129,3 +131,4 @@ plots_bio <- add_bio_realms(plots.tf)
 
 #--------------------- Export output -----------------------------------------------------------
 write.csv(plots_bio, file.path(outDir,paste0(datasetName,"_",map_year,"_validation_data.csv")), row.names=FALSE)
+
