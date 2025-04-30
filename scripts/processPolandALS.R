@@ -19,7 +19,7 @@ outDir <- config$outputDir
 
 #### Set variables####
 datasetName <- "poland_agb_als"
-map_year = 2017
+map_year = 2015
 mapRsl <- 100 
 dataVersion<- 7
 remove <- c('FEZ', 'FAO.ecozone',  "RS_HA","ratio" )
@@ -29,10 +29,10 @@ sdMapVal <- "NA"  #######should have a value to be consistent with PVIR1-2 e.g. 
 # source(file.path(srcDir, "open_plot_data.R"))
 source(file.path(srcDir, "RefLidar.R"))
 source(file.path(srcDir, "Deforested.R"))
-source(file.path(srcDir,"BiomePair.R"))
-source(file.path(srcDir,"TempFix.R"))
-source(file.path(srcDir,"TempVis.R"))
-source(file.path(srcDir,"AddBiorealm.R"))
+source(file.path(srcDir, "BiomePair.R"))
+source(file.path(srcDir, "TempFix.R"))
+source(file.path(srcDir, "TempVis.R"))
+source(file.path(srcDir, "AddBiorealm.R"))
 
 #-------------------------------- Open Dataset --------------------------------
 fname <- file.path(dataDir,paste0("output/",datasetName,"_formatted.csv"))
@@ -66,6 +66,7 @@ if (file.exists(checkpoint_path)) {
 
 ## ------------------ Measurement error (ONLY for plot data cases #1-3) --------------------------
 
+
 ## Using a pre-trained RF model for plot-level data 
 load(file.path(dataDir, "rf1.RData")) #pre-trained RF model from 10000+ plots across biomes 
 plotsPred <- plots2[,c('AGB','SIZE_HA', 'GEZ')]
@@ -73,6 +74,7 @@ names(plotsPred) <- c('agb', 'size', 'gez')
 plotsPred$size <- as.numeric(plotsPred$size) * 10000 #convert size to m2
 plotsPred$gez = factor(plotsPred$gez,levels = c("Boreal","Subtropical","Temperate","Tropical"))
 plots2$sdTree <- predict(rf1, plotsPred)[[1]]
+
 
 
 ## ------------------ Temporal adjustment ------------------------------------------------------
@@ -129,3 +131,4 @@ plots_bio <- add_bio_realms(plots.tf)
 
 #--------------------- Export output -----------------------------------------------------------
 write.csv(plots_bio, file.path(outDir,paste0(datasetName,"_",map_year,"_validation_data.csv")), row.names=FALSE)
+
